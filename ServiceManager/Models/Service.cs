@@ -19,6 +19,7 @@ public class Service
     public ServiceTypes Type { get; set; } = ServiceTypes.Normal;
     public string? WorkingDir { get; set; }
     public CommandDefinition[] Commands { get; set; } = [];
+    public CommandDefinition[] StopCommands { get; set; } = [];
 
     public int MaxLogFiles  { get; set; } = 10;
     public int MaxLogFileSize  { get; set; } = 32;

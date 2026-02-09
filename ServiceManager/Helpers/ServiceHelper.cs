@@ -64,6 +64,9 @@ public class ServiceHelper
         await ProcessHelper.KillProcessTree(proc);
         proc.Dispose();
         _processes[idx] = null;
+        foreach (var command in service.StopCommands) {
+            await ProcessHelper.RunCommand(command.Command, command.Arguments);
+        }
         ConsoleHelper.WriteLineSuccess("OK");
     }
 

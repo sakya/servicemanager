@@ -79,6 +79,24 @@ public static class ProcessHelper
         }
     }
 
+    public static async Task RunCommand(string command, string? args)
+    {
+        var si = new ProcessStartInfo
+        {
+            FileName = command,
+            Arguments = args,
+            WindowStyle = ProcessWindowStyle.Hidden,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+
+        var process = new Process();
+        process.StartInfo = si;
+        process.Start();
+        await process.WaitForExitAsync();
+        process.Dispose();
+    }
+
     private static async Task KillProcess(Process process)
     {
         try {
@@ -137,23 +155,5 @@ public static class ProcessHelper
         }
 
         return children;
-    }
-
-    private static async Task RunCommand(string command, string args)
-    {
-        var si = new ProcessStartInfo
-        {
-            FileName = command,
-            Arguments = args,
-            WindowStyle = ProcessWindowStyle.Hidden,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        };
-
-        var process = new Process();
-        process.StartInfo = si;
-        process.Start();
-        await process.WaitForExitAsync();
-        process.Dispose();
     }
 }
