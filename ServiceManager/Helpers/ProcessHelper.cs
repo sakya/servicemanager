@@ -88,11 +88,21 @@ public static class ProcessHelper
             WindowStyle = ProcessWindowStyle.Hidden,
             UseShellExecute = false,
             CreateNoWindow = true,
+            RedirectStandardError = true,
+            RedirectStandardOutput = true,
         };
 
         var process = new Process();
         process.StartInfo = si;
+
+        process.OutputDataReceived += (_, _) => { };
+        process.ErrorDataReceived += (_, _) => { };
+
         process.Start();
+        process.EnableRaisingEvents = true;
+        process.BeginErrorReadLine();
+        process.BeginOutputReadLine();
+
         await process.WaitForExitAsync();
         process.Dispose();
     }
