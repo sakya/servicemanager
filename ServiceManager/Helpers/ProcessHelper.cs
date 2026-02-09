@@ -64,19 +64,14 @@ public static class ProcessHelper
 
     public static async Task KillProcessTree(Process process)
     {
-        if (Environment.OSVersion.Platform == PlatformID.Unix) {
-            await RunCommand("kill", $"-TERM -{process.Id}");
-            await RunCommand("kill", $"-KILL -{process.Id}");
-        } else {
-            var processes = Environment.OSVersion.Platform == PlatformID.Win32NT
-                ? GetChildProcesses(process)
-                : GetChildProcessesLinux(process);
-            foreach (var child in processes) {
-                await KillProcessTree(child);
-            }
-
-            await KillProcess(process);
+        var processes = Environment.OSVersion.Platform == PlatformID.Win32NT
+            ? GetChildProcesses(process)
+            : GetChildProcessesLinux(process);
+        foreach (var child in processes) {
+            await KillProcessTree(child);
         }
+
+        await KillProcess(process);
     }
 
     public static async Task RunCommand(string command, string? args)

@@ -166,7 +166,7 @@ public class ServiceHelper
             )
         );
 
-        var proc = ProcessHelper.RunProcess(service.Name, "bash", $"-lc \"exec setsid {cmd}\"", service.WorkingDir, Program.Configuration["logPath"], service.MaxLogFileSize, service.MaxLogFiles);
+        var proc = ProcessHelper.RunProcess(service.Name, "bash", $"-lc \"{cmd}\"", service.WorkingDir, Program.Configuration["logPath"], service.MaxLogFileSize, service.MaxLogFiles);
         return proc;
     }
 }
