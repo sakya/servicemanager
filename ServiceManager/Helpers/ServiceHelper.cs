@@ -157,14 +157,8 @@ public class ServiceHelper
 
     private Process StartTerminalService(Service service)
     {
-        var commands = new List<Service.CommandDefinition>(service.Commands);
-        commands.Insert(0, new Service.CommandDefinition()
-        {
-            Command = ".",
-            Arguments = "$HOME/.nvm/nvm.sh"
-        });
         var cmd = string.Join(" && ",
-            commands.Select(c =>
+            service.Commands.Select(c =>
                 $"{c.Command} {c.Arguments}".Trim()
             )
         );

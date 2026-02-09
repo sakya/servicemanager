@@ -44,7 +44,7 @@ class Program
         // Run services
         var services = Configuration.GetRequiredSection("services").Get<Service[]>();
         if (services == null || services.Length == 0) {
-            Logger.Error("No services found");
+            Logger.Error("No services defined in appsettings.json");
             return -1;
         }
 
@@ -70,8 +70,7 @@ class Program
         // User input thread
         new Thread(() =>
         {
-            while (!cts.Token.IsCancellationRequested)
-            {
+            while (!cts.Token.IsCancellationRequested) {
                 var line = Console.ReadLine();
                 if (!string.IsNullOrEmpty(line)) {
                     Queue.Add(line);
