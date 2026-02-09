@@ -62,7 +62,24 @@ public static class ProcessHelper
         return process;
     }
 
-    public static async Task KillProcess(Process process)
+    public static async Task KillProcessTree(Process process)
+    {
+        if (Environment.OSVersion.Platform == PlatformID.Unix) {
+            await RunCommand("kill", $"-TERM -{process.Id}");
+            await RunCommand("kill", $"-KILL -{process.Id}");
+        } else {
+            var processes = Environment.OSVersion.Platform == PlatformID.Win32NT
+                ? GetChildProcesses(process)
+                : GetChildProcessesLinux(process);
+            foreach (var child in processes) {
+                await KillProcessTree(child);
+            }
+
+            await KillProcess(process);
+        }
+    }
+
+    private static async Task KillProcess(Process process)
     {
         try {
             process.Kill(true);
@@ -71,18 +88,6 @@ public static class ProcessHelper
         } catch (Exception ex) {
             Program.Logger?.Warning("Error killing process with id {ProcessId}: {ExMessage}", process.Id, ex.Message);
         }
-    }
-
-    public static async Task KillProcessTree(Process process)
-    {
-        var processes = Environment.OSVersion.Platform == PlatformID.Win32NT ?
-            GetChildProcesses(process) :
-            GetChildProcessesLinux(process);
-        foreach (var child in processes) {
-            await KillProcessTree(child);
-        }
-
-        await KillProcess(process);
     }
 
     private static IList<Process> GetChildProcesses(Process process)
@@ -132,5 +137,23 @@ public static class ProcessHelper
         }
 
         return children;
+    }
+
+    private static async Task RunCommand(string command, string args)
+    {
+        var si = new ProcessStartInfo
+        {
+            FileName = command,
+            Arguments = args,
+            WindowStyle = ProcessWindowStyle.Hidden,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        };
+
+        var process = new Process();
+        process.StartInfo = si;
+        process.Start();
+        await process.WaitForExitAsync();
+        process.Dispose();
     }
 }
