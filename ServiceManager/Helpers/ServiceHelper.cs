@@ -70,9 +70,14 @@ public class ServiceHelper
         ConsoleHelper.WriteLineSuccess("OK");
     }
 
-    public Service? GetService(string serviceName)
+    public Service? GetService(string nameOrNumber)
     {
-        return Services.FirstOrDefault(s => s.Name.Equals(serviceName, StringComparison.InvariantCultureIgnoreCase));
+        if (int.TryParse(nameOrNumber, out var index)) {
+            if (index >= 0 && Services.Length >= index) {
+                return Services[index - 1];
+            }
+        }
+        return Services.FirstOrDefault(s => s.Name.Equals(nameOrNumber, StringComparison.InvariantCultureIgnoreCase));
     }
 
     public async Task Start(Service service)
@@ -144,6 +149,7 @@ public class ServiceHelper
                 return proc;
             }
             proc.WaitForExit();
+            proc.Dispose();
         }
 
         return null;
