@@ -21,9 +21,8 @@ public class ExitCommand : CommandBase
             return false;
         }
 
-        Console.WriteLine("Stopping services:");
+        ConsoleHelper.WriteLineHighlight("Stopping services:");
         foreach (var service in ServiceHelper.Services) {
-            Console.Write("  ");
             await ServiceHelper.Stop(service);
         }
 

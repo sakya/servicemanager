@@ -8,14 +8,14 @@ public static class ConsoleHelper
 
     public static void WriteHighlight(string message)
     {
-        Console.ForegroundColor = ConsoleColor.White;
+        Console.ForegroundColor = ConsoleColor.DarkBlue;
         Console.Write(message);
         Console.ResetColor();
     }
 
     public static void WriteLineHighlight(string message)
     {
-        Console.ForegroundColor = ConsoleColor.White;
+        Console.ForegroundColor = ConsoleColor.DarkBlue;
         Console.WriteLine(message);
         Console.ResetColor();
     }

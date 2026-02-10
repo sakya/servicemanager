@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Serilog;
 using Serilog.Core;
@@ -17,9 +18,23 @@ class Program
 
     private static async Task<int> Main(string[] args)
     {
+        Console.WriteLine($"ServiceManager v.{Assembly.GetExecutingAssembly().GetName().Version}");
+        Console.WriteLine("Copyright © 2026 by Paolo Iommarini");
+        Console.WriteLine();
+
+        var settingsPath = args.Length > 0 ?
+            args[0] :
+            Path.Combine(Directory.GetCurrentDirectory(), "appsettings.json");
+        if (!File.Exists(settingsPath)) {
+            ConsoleHelper.WriteLineError("Settings file not found");
+            return -1;
+        }
+        Console.WriteLine($"Settings file: {settingsPath}");
+        Console.WriteLine();
+
         var builder = new ConfigurationBuilder();
         builder.SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true);
+            .AddJsonFile(settingsPath, optional: false, reloadOnChange: true);
         Configuration = builder.Build();
 
         var loggerConfig = new LoggerConfiguration()
@@ -67,7 +82,6 @@ class Program
         ConsoleHelper.WriteLineHighlight("Starting services:");
         foreach (var service in serviceHelper.Services) {
             if (service.AutoStart) {
-                Console.Write("  ");
                 await serviceHelper.Start(service);
             }
         }
