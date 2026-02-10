@@ -48,10 +48,16 @@ class Program
             return -1;
         }
 
-        ConsoleHelper.WriteLineHighlight("Available services:");
+        ConsoleHelper.WriteLineHighlight($"{"Service", -30}Auto start");
         var i = 0;
         foreach (var service in services) {
-            Console.WriteLine($"[{++i}] {service.Name}");
+            Console.Write($"[{++i}] {service.Name}");
+            Console.CursorLeft = 30;
+            if (service.AutoStart) {
+                ConsoleHelper.WriteLineSuccess("True");
+            } else {
+                ConsoleHelper.WriteLineWarning("False");
+            }
         }
         Console.WriteLine();
 
