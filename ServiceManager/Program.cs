@@ -101,7 +101,6 @@ class Program
                     userInput = true;
                     Console.WriteLine();
                     input = input.ToLower().Trim();
-                    Logger?.Information("User input: {Input}", input);
 
                     var idx = input.IndexOf(' ');
                     var commandName = idx >= 0 ? input[..idx] : input;
