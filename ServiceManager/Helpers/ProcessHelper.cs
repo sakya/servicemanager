@@ -76,6 +76,11 @@ public static class ProcessHelper
 
     public static async Task RunCommand(string command, string? args)
     {
+        if (Environment.OSVersion.Platform == PlatformID.Unix) {
+            args = $"-lc \"{command} && exit\"";
+            command = "bash";
+        }
+
         var si = new ProcessStartInfo
         {
             FileName = command,
