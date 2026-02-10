@@ -77,7 +77,7 @@ class Program
         new Thread(() =>
         {
             while (!cts.Token.IsCancellationRequested) {
-                var line = Console.ReadLine();
+                var line = ConsoleHelper.ReadLine(cts.Token, 2);
                 if (!string.IsNullOrEmpty(line)) {
                     Queue.Add(line);
                 } else {
@@ -98,6 +98,7 @@ class Program
             try {
                 await Task.Delay(100, cts.Token);
                 if (Queue.TryTake(out var input)) {
+                    ConsoleHelper.InputDisabled = true;
                     userInput = true;
                     Console.WriteLine();
                     input = input.ToLower().Trim();
@@ -115,6 +116,8 @@ class Program
                 }
             } catch (OperationCanceledException) {
                 // Ignored
+            } finally {
+                ConsoleHelper.InputDisabled = false;
             }
         }
 
