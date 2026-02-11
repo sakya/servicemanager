@@ -77,7 +77,7 @@ public static class ProcessHelper
     public static async Task RunCommand(string command, string? args)
     {
         if (Environment.OSVersion.Platform == PlatformID.Unix) {
-            args = $"-lc \"{command} && exit\"";
+            args = $"-lc \"{command} {args} && exit\"";
             command = "bash";
         }
 
@@ -104,6 +104,9 @@ public static class ProcessHelper
         process.BeginOutputReadLine();
 
         await process.WaitForExitAsync();
+        if (process.ExitCode != 0) {
+            Program.Logger?.Warning("Command '{Command} {Args}' exit code: {ProcessExitCode}", command, args, process.ExitCode);
+        }
         process.Dispose();
     }
 
