@@ -4,10 +4,12 @@ namespace ServiceManager.Commands;
 
 public class StatusCommand : CommandBase
 {
-    public StatusCommand(ServiceHelper serviceHelper) : base(serviceHelper)
+    private Dictionary<string, SshTunnel?> _sshTunnels;
+    public StatusCommand(ServiceHelper serviceHelper, Dictionary<string, SshTunnel?> sshTunnels) : base(serviceHelper)
     {
+        _sshTunnels = sshTunnels;
         Names = ["status", "list"];
-        Description = "List all services status";
+        Description = "List all services/SSH tunnels status";
     }
 
     public override Task<bool> Run(string args)
@@ -17,8 +19,23 @@ public class StatusCommand : CommandBase
             return Task.FromResult(false);
         }
 
-        ConsoleHelper.WriteLineHighlight("Service status:");
         var i = 0;
+        if (_sshTunnels.Count > 0) {
+            ConsoleHelper.WriteLineHighlight("SSH tunnels status:");
+            foreach (var kvp in _sshTunnels) {
+                Console.Write($"[{++i}] {kvp.Key}");
+                Console.CursorLeft = 40;
+                if (kvp.Value?.Status == SshTunnel.SshStatus.Connected) {
+                    ConsoleHelper.WriteLineSuccess("Connected");
+                } else {
+                    ConsoleHelper.WriteLineError("Disconnected");
+                }
+            }
+            Console.WriteLine();
+        }
+
+        ConsoleHelper.WriteLineHighlight("Service status:");
+        i = 0;
         foreach (var service in ServiceHelper.Services) {
             Console.Write($"[{++i}] {service.Name}");
             Console.CursorLeft = 40;

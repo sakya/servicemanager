@@ -1,6 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
+using Org.BouncyCastle.Asn1.Cmp;
 using Serilog;
 using Serilog.Core;
 using ServiceManager.Commands;
@@ -15,6 +16,7 @@ class Program
     public static Logger? Logger;
     private static readonly BlockingCollection<string> Queue = new();
     private static readonly List<CommandBase> Commands = [];
+    private static readonly Dictionary<string, SshTunnel?> SshTunnels = [];
 
     private static async Task<int> Main(string[] args)
     {
@@ -56,13 +58,39 @@ class Program
             cts.Cancel();
         };
 
-        // Run services
         var services = Configuration.GetRequiredSection("services").Get<Service[]>();
         if (services == null || services.Length == 0) {
             Logger.Error("No services defined in appsettings.json");
             return -1;
         }
 
+        // Start SSH tunnels
+        var sshTunnelsConfigs = Configuration.GetRequiredSection("sshTunnels").Get<SshTunnelConfig[]>();
+        if (sshTunnelsConfigs?.Length > 0) {
+            ConsoleHelper.WriteLineHighlight("Starting SSH tunnels");
+            foreach (var sshTunnelConfig in sshTunnelsConfigs) {
+                Console.Write($"{sshTunnelConfig.Name}");
+                Console.CursorLeft = 30;
+                ConsoleHelper.WriteHighlight("Connecting");
+                try {
+                    var t = new SshTunnel(
+                        sshTunnelConfig.LocalPort, sshTunnelConfig.RemotePort,
+                        sshTunnelConfig.Host,
+                        sshTunnelConfig.UserName, sshTunnelConfig.Password);
+                    await t.Connect();
+
+                    Console.CursorLeft = 40;
+                    ConsoleHelper.WriteLineSuccess("Ok");
+                    SshTunnels[sshTunnelConfig.Name] = t;
+                } catch {
+                    Console.CursorLeft = 40;
+                    ConsoleHelper.WriteLineError("Failed");
+                    SshTunnels[sshTunnelConfig.Name] = null;
+                }
+            }
+        }
+
+        // Auto start services
         ConsoleHelper.WriteLineHighlight($"{"Service", -40}Auto start");
         var i = 0;
         foreach (var service in services) {
@@ -135,6 +163,10 @@ class Program
             }
         }
 
+        // Stop SSH tunnels
+        foreach (var kvp in SshTunnels) {
+            kvp.Value?.Dispose();
+        }
         return 0;
     }
 
@@ -146,7 +178,7 @@ class Program
     private static void InitCommands(ServiceHelper serviceHelper, CancellationTokenSource cts)
     {
         Commands.Add(new ExitCommand(serviceHelper, cts));
-        Commands.Add(new StatusCommand(serviceHelper));
+        Commands.Add(new StatusCommand(serviceHelper, SshTunnels));
         Commands.Add(new StartCommand(serviceHelper));
         Commands.Add(new StopCommand(serviceHelper));
         Commands.Add(new RestartCommand(serviceHelper));
