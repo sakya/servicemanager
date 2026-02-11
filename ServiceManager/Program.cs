@@ -70,7 +70,7 @@ class Program
             ConsoleHelper.WriteLineHighlight("Starting SSH tunnels");
             foreach (var sshTunnelConfig in sshTunnelsConfigs) {
                 Console.Write($"{sshTunnelConfig.Name}");
-                Console.CursorLeft = 30;
+                Console.CursorLeft = 40;
                 ConsoleHelper.WriteHighlight("Connecting");
                 try {
                     var t = new SshTunnel(
