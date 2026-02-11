@@ -16,6 +16,7 @@ public class Service
 
     public string Name { get; set; } = null!;
     public string? Description { get; set; }
+    public string? Url { get; set; }
     public ServiceTypes Type { get; set; } = ServiceTypes.Normal;
     public string? WorkingDir { get; set; }
     public CommandDefinition[] Commands { get; set; } = [];

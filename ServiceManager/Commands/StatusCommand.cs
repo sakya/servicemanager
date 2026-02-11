@@ -23,10 +23,12 @@ public class StatusCommand : CommandBase
             Console.Write($"[{++i}] {service.Name}");
             Console.CursorLeft = 40;
             if (ServiceHelper.IsRunning(service)) {
-                ConsoleHelper.WriteLineSuccess("Running");
+                ConsoleHelper.WriteSuccess("Running");
             } else {
-                ConsoleHelper.WriteLineError("Stopped");
+                ConsoleHelper.WriteError("Stopped");
             }
+            Console.CursorLeft = 50;
+            Console.WriteLine(service.Url);
         }
         return Task.FromResult(true);
     }

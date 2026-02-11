@@ -63,11 +63,11 @@ class Program
             return -1;
         }
 
-        ConsoleHelper.WriteLineHighlight($"{"Service", -30}Auto start");
+        ConsoleHelper.WriteLineHighlight($"{"Service", -40}Auto start");
         var i = 0;
         foreach (var service in services) {
             Console.Write($"[{++i}] {service.Name}");
-            Console.CursorLeft = 30;
+            Console.CursorLeft = 40;
             if (service.AutoStart) {
                 ConsoleHelper.WriteLineSuccess("True");
             } else {
