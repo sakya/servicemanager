@@ -76,7 +76,8 @@ class Program
                     var t = new SshTunnel(
                         sshTunnelConfig.LocalPort, sshTunnelConfig.RemotePort,
                         sshTunnelConfig.Host,
-                        sshTunnelConfig.UserName, sshTunnelConfig.Password);
+                        sshTunnelConfig.UserName, sshTunnelConfig.Password,
+                        Logger);
                     await t.Connect();
 
                     Console.CursorLeft = 40;
@@ -88,6 +89,7 @@ class Program
                     SshTunnels[sshTunnelConfig.Name] = null;
                 }
             }
+            Console.WriteLine();
         }
 
         // Auto start services
