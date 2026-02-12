@@ -17,13 +17,19 @@ public class ExitCommand : CommandBase
     public override async Task<bool> Run(string args)
     {
         if (!string.IsNullOrEmpty(args)) {
-            ConsoleHelper.WriteLineError("Command 'quit' doesn't have arguments");
+            ConsoleHelper.WriteLineError("Command 'exit' doesn't have arguments");
             return false;
         }
 
         ConsoleHelper.WriteLineHighlight("Stopping services:");
         foreach (var service in ServiceHelper.Services) {
-            await ServiceHelper.Stop(service);
+            try {
+                await ServiceHelper.Stop(service);
+            } catch (Exception ex) {
+                Console.WriteLine();
+                ConsoleHelper.WriteLineError($"Failed to stop service {service.Name}: {ex.Message}");
+                Program.Logger?.Error("Error stopping service {serviceName}: {ExMessage}", service.Name, ex.Message);
+            }
         }
 
         await _cts.CancelAsync();
