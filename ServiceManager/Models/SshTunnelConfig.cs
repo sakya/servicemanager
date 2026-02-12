@@ -8,4 +8,5 @@ public class SshTunnelConfig
     public uint RemotePort { get; set; }
     public string UserName { get; set; } = null!;
     public string Password { get; set; } = null!;
+    public bool AutoConnect { get; set;}
 }

@@ -1,7 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
-using Org.BouncyCastle.Asn1.Cmp;
 using Serilog;
 using Serilog.Core;
 using ServiceManager.Commands;
@@ -16,7 +15,7 @@ class Program
     public static Logger? Logger;
     private static readonly BlockingCollection<string> Queue = new();
     private static readonly List<CommandBase> Commands = [];
-    private static readonly Dictionary<string, SshTunnel?> SshTunnels = [];
+    private static readonly Dictionary<string, SshTunnel?> SshTunnels = new(StringComparer.InvariantCultureIgnoreCase);
 
     private static async Task<int> Main(string[] args)
     {
@@ -66,12 +65,21 @@ class Program
 
         // Start SSH tunnels
         var sshTunnelsConfigs = Configuration.GetRequiredSection("sshTunnels").Get<SshTunnelConfig[]>();
-        if (sshTunnelsConfigs?.Length > 0) {
+        if (sshTunnelsConfigs != null) {
+            foreach (var sshTunnelConfig in sshTunnelsConfigs) {
+                SshTunnels[sshTunnelConfig.Name] = null;
+            }
+        }
+
+        if (sshTunnelsConfigs?.Any(c => c.AutoConnect) == true) {
             ConsoleHelper.WriteLineHighlight("Starting SSH tunnels");
             foreach (var sshTunnelConfig in sshTunnelsConfigs) {
+                if (!sshTunnelConfig.AutoConnect)
+                    continue;
+
                 Console.Write($"{sshTunnelConfig.Name}");
                 Console.CursorLeft = 40;
-                ConsoleHelper.WriteHighlight("Connecting");
+                ConsoleHelper.WriteWarning("Connecting");
                 try {
                     var t = new SshTunnel(
                         sshTunnelConfig.LocalPort, sshTunnelConfig.RemotePort,
@@ -81,11 +89,11 @@ class Program
                     await t.Connect();
 
                     Console.CursorLeft = 40;
-                    ConsoleHelper.WriteLineSuccess("Ok");
+                    ConsoleHelper.WriteLineSuccess($"{"Ok", -10}");
                     SshTunnels[sshTunnelConfig.Name] = t;
                 } catch {
                     Console.CursorLeft = 40;
-                    ConsoleHelper.WriteLineError("Failed");
+                    ConsoleHelper.WriteLineSuccess($"{"Failed", -10}");
                     SshTunnels[sshTunnelConfig.Name] = null;
                 }
             }
@@ -184,6 +192,9 @@ class Program
         Commands.Add(new StartCommand(serviceHelper));
         Commands.Add(new StopCommand(serviceHelper));
         Commands.Add(new RestartCommand(serviceHelper));
+
+        Commands.Add(new ConnectCommand(serviceHelper, Configuration.GetRequiredSection("sshTunnels").Get<SshTunnelConfig[]>(), SshTunnels));
+        Commands.Add(new DisconnectCommand(serviceHelper, Configuration.GetRequiredSection("sshTunnels").Get<SshTunnelConfig[]>(), SshTunnels));
 
         Commands.Add(new HelpCommand(serviceHelper, Commands));
     }

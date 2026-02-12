@@ -17,7 +17,7 @@ public class SshTunnel : IDisposable
     private ForwardedPortLocal? _forwardedPort;
     private readonly int _reconnectDelay;
     private Task? _reconnectTask;
-    private readonly CancellationTokenSource _cts = new();
+    private CancellationTokenSource? _reconnectCts;
     private readonly Logger? _logger;
     private readonly SemaphoreSlim _reconnectLock = new(1, 1);
     private volatile bool _disposed;
@@ -49,43 +49,63 @@ public class SshTunnel : IDisposable
 
     public async Task<bool> Connect()
     {
-        Status = SshStatus.Connecting;
-        _sshClient = new SshClient(Host, Username, Password);
-        _sshClient.ErrorOccurred += (sender, eventArgs) =>
-        {
-            _logger?.Warning("SSH client error: {ExceptionMessage}", eventArgs.Exception.Message);
-            Status = SshStatus.Disconnected;
-        };
-        await _sshClient.ConnectAsync(CancellationToken.None);
-        if (_sshClient.IsConnected) {
-            _forwardedPort = new ForwardedPortLocal("127.0.0.1", LocalPort, "127.0.0.1", RemotePort);
-            _forwardedPort.Closing += (sender, eventArgs) =>
+        try {
+            Status = SshStatus.Connecting;
+            _sshClient = new SshClient(Host, Username, Password);
+            _sshClient.ErrorOccurred += (_, eventArgs) =>
             {
-                _logger?.Warning("Closing SSH tunnel");
+                _logger?.Warning("SSH client error: {ExceptionMessage}", eventArgs.Exception.Message);
                 Status = SshStatus.Disconnected;
             };
-            _sshClient.AddForwardedPort(_forwardedPort);
-            _forwardedPort.Start();
-            if (_forwardedPort.IsStarted) {
-                Status = SshStatus.Connected;
-                _logger?.Information("SSH tunnel established: {LocalPort} -> {RemotePort}", LocalPort, RemotePort);
-                if (_reconnectTask == null) {
-                    _reconnectTask = CheckConnectionTask(_cts.Token);
+            await _sshClient.ConnectAsync(CancellationToken.None);
+            if (_sshClient.IsConnected) {
+                _forwardedPort = new ForwardedPortLocal("127.0.0.1", LocalPort, "127.0.0.1", RemotePort);
+                _forwardedPort.Closing += (_, _) =>
+                {
+                    _logger?.Warning("Closing SSH tunnel");
+                    Status = SshStatus.Disconnected;
+                };
+                _sshClient.AddForwardedPort(_forwardedPort);
+                _forwardedPort.Start();
+                if (_forwardedPort.IsStarted) {
+                    Status = SshStatus.Connected;
+                    _logger?.Information("SSH tunnel established: {LocalPort} -> {RemotePort}", LocalPort, RemotePort);
+                    if (_reconnectTask == null) {
+                        _reconnectCts = new CancellationTokenSource();
+                        _reconnectTask = CheckConnectionTask(_reconnectCts.Token);
+                    }
+
+                    return true;
                 }
-                return true;
+
+                Status = SshStatus.Disconnected;
+                _logger?.Warning("Failed to add forwarded port");
             }
 
-            Status = SshStatus.Disconnected;
-            _logger?.Warning("Failed to add forwarded port");
+        } catch (Exception ex) {
+            _logger?.Error("Error connecting SSH tunnel: {ExMessage}", ex.Message);
+
+            if (_forwardedPort != null) {
+                _forwardedPort.Dispose();
+                _forwardedPort = null;
+            }
+
+            if (_sshClient != null) {
+                _sshClient.Dispose();
+                _sshClient = null;
+            }
         }
 
         return false;
     }
 
-    public void Dispose()
+    public Task<bool> Disconnect()
     {
-        _disposed = true;
-        _cts.Cancel();
+        if (_reconnectCts != null) {
+            _reconnectCts.Cancel();
+            _reconnectCts.Dispose();
+        }
+
         if (_sshClient != null) {
             _logger?.Information("Disconnecting SSH client");
             if (_forwardedPort != null) {
@@ -103,6 +123,14 @@ public class SshTunnel : IDisposable
             _reconnectTask.Dispose();
             _reconnectTask = null;
         }
+
+        return Task.FromResult(true);
+    }
+
+    public void Dispose()
+    {
+        _disposed = true;
+        Disconnect();
     }
 
     private async Task Reconnect(CancellationToken ct)
@@ -123,6 +151,7 @@ public class SshTunnel : IDisposable
                     _forwardedPort.Stop();
                     _forwardedPort.Dispose();
                 }
+
                 _sshClient.Disconnect();
                 _sshClient.Dispose();
             }
@@ -130,6 +159,8 @@ public class SshTunnel : IDisposable
             if (!await Connect()) {
                 _logger?.Warning("Failed to reconnect SSH client");
             }
+        } catch (OperationCanceledException) {
+            // Ignored
         } finally {
             _reconnectLock.Release();
         }
