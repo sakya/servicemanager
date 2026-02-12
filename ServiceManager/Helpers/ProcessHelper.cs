@@ -90,6 +90,7 @@ public static class ProcessHelper
             CreateNoWindow = true,
             RedirectStandardError = true,
             RedirectStandardOutput = true,
+            WorkingDirectory = Directory.GetCurrentDirectory()
         };
 
         var process = new Process();
