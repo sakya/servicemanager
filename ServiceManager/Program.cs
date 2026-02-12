@@ -86,10 +86,15 @@ class Program
                         sshTunnelConfig.Host,
                         sshTunnelConfig.UserName, sshTunnelConfig.Password,
                         Logger);
-                    await t.Connect();
+                    var connected = await t.Connect();
 
                     Console.CursorLeft = 40;
-                    ConsoleHelper.WriteLineSuccess($"{"Ok", -10}");
+                    if (connected) {
+                        ConsoleHelper.WriteLineSuccess($"{"Ok", -10}");
+                    } else {
+                        ConsoleHelper.WriteLineError($"{"Failed", -10}");
+                    }
+
                     SshTunnels[sshTunnelConfig.Name] = t;
                 } catch {
                     Console.CursorLeft = 40;
