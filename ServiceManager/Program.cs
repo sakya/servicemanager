@@ -20,7 +20,7 @@ class Program
     private static async Task<int> Main(string[] args)
     {
         Console.WriteLine($"ServiceManager v.{Assembly.GetExecutingAssembly().GetName().Version}");
-        Console.WriteLine("Copyright © 2026 by Paolo Iommarini");
+        Console.WriteLine(((AssemblyCopyrightAttribute)Attribute.GetCustomAttribute(Assembly.GetExecutingAssembly(), typeof(AssemblyCopyrightAttribute), false)!).Copyright);
         Console.WriteLine();
 
         var settingsPath = args.Length > 0 ?
@@ -31,6 +31,7 @@ class Program
             return -1;
         }
         Console.WriteLine($"Settings file: {settingsPath}");
+        Console.WriteLine($"Current directory: {Directory.GetCurrentDirectory()}");
         Console.WriteLine();
 
         var builder = new ConfigurationBuilder();
