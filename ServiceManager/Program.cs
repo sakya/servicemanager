@@ -106,7 +106,6 @@ class Program
             Console.WriteLine();
         }
 
-        // Auto start services
         ConsoleHelper.WriteLineHighlight($"{"Service", -40}Auto start");
         var i = 0;
         foreach (var service in services) {
@@ -123,13 +122,16 @@ class Program
         var serviceHelper = new ServiceHelper(services);
         InitCommands(serviceHelper, cts);
 
-        ConsoleHelper.WriteLineHighlight("Starting services:");
-        foreach (var service in serviceHelper.Services) {
-            if (service.AutoStart) {
-                await serviceHelper.Start(service);
+        // Auto start services
+        if (services.Any(s => s.AutoStart)) {
+            ConsoleHelper.WriteLineHighlight("Starting services:");
+            foreach (var service in serviceHelper.Services) {
+                if (service.AutoStart) {
+                    await serviceHelper.Start(service);
+                }
             }
+            Console.WriteLine();
         }
-        Console.WriteLine();
 
         // User input thread
         new Thread(() =>
