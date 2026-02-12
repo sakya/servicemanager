@@ -30,18 +30,26 @@ class Program
             ConsoleHelper.WriteLineError("Settings file not found");
             return -1;
         }
-        Console.WriteLine($"Settings file: {settingsPath}");
-        Console.WriteLine($"Current directory: {Directory.GetCurrentDirectory()}");
-        Console.WriteLine();
 
         var builder = new ConfigurationBuilder();
         builder.SetBasePath(Directory.GetCurrentDirectory())
             .AddJsonFile(settingsPath, optional: false, reloadOnChange: true);
         Configuration = builder.Build();
 
+        var logPath = Configuration["logPath"] ?? "./logs";
+        logPath = Path.GetFullPath(logPath);
+        if (!Directory.Exists(logPath)) {
+            Directory.CreateDirectory(logPath);
+        }
+
+        Console.WriteLine($"Settings file: {settingsPath}");
+        Console.WriteLine($"Log directory: {logPath}");
+        Console.WriteLine($"Current directory: {Directory.GetCurrentDirectory()}");
+        Console.WriteLine();
+
         var loggerConfig = new LoggerConfiguration()
             .WriteTo.File(
-                Path.Join(Configuration["logPath"], "ServiceManager-.log"),
+                Path.Join(logPath, "ServiceManager-.log"),
                 rollingInterval: RollingInterval.Day,
                 buffered: false,
                 fileSizeLimitBytes: 32 * 1024 * 1024,
