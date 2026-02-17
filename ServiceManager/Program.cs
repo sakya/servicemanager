@@ -175,12 +175,10 @@ class Program
 
             try {
                 await Task.Delay(100, cts.Token);
-                if (Queue.TryTake(out var oInput)) {
+                if (Queue.TryTake(out var input)) {
                     ConsoleHelper.InputDisabled = true;
                     userInput = true;
                     Console.WriteLine();
-                    oInput = oInput.Trim();
-                    var input = oInput.Trim();
 
                     var idx = input.IndexOf(' ');
                     var commandName = idx >= 0 ? input[..idx] : input;
