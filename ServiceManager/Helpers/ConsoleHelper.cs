@@ -74,10 +74,11 @@ public static class ConsoleHelper
         Console.ResetColor();
     }
 
-    public static string ReadLine(CancellationToken ct = default, int startLeft = 0)
+    public static string ReadLine(CancellationToken ct = default, int startLeft = 0, List<string>? commandsHistory = null)
     {
         var buffer = new StringBuilder();
         var cursor = 0;
+        var historyIdx = commandsHistory?.Count ?? 0;
 
         while (!ct.IsCancellationRequested) {
             var key = Console.ReadKey(true);
@@ -95,12 +96,45 @@ public static class ConsoleHelper
                         cursor--;
                         SetCursor(startLeft, Console.CursorTop, cursor);
                     }
+
                     break;
                 case ConsoleKey.RightArrow:
                     if (cursor < buffer.Length) {
                         cursor++;
                         SetCursor(startLeft, Console.CursorTop, cursor);
                     }
+
+                    break;
+
+                case ConsoleKey.UpArrow:
+                    if (commandsHistory != null && historyIdx > 0) {
+                        historyIdx--;
+                        buffer.Clear();
+                        buffer.Append(commandsHistory[historyIdx]);
+                        cursor = buffer.Length;
+                        ClearLine(startLeft, Console.CursorTop);
+                        RedrawLine(startLeft, Console.CursorTop, buffer, cursor);
+                    }
+
+                    break;
+                case ConsoleKey.DownArrow:
+                    if (commandsHistory != null) {
+                        if (historyIdx < commandsHistory.Count - 1) {
+                            historyIdx++;
+                            buffer.Clear();
+                            buffer.Append(commandsHistory[historyIdx]);
+                            cursor = buffer.Length;
+                            ClearLine(startLeft, Console.CursorTop);
+                            RedrawLine(startLeft, Console.CursorTop, buffer, cursor);
+                        } else if (historyIdx == commandsHistory.Count - 1) {
+                            historyIdx++;
+                            buffer.Clear();
+                            cursor = 0;
+                            ClearLine(startLeft, Console.CursorTop);
+                            RedrawLine(startLeft, Console.CursorTop, buffer, cursor);
+                        }
+                    }
+
                     break;
 
                 case ConsoleKey.Home:
@@ -119,6 +153,7 @@ public static class ConsoleHelper
                         cursor--;
                         RedrawLine(startLeft, Console.CursorTop, buffer, cursor);
                     }
+
                     break;
 
                 case ConsoleKey.Delete:
@@ -126,6 +161,7 @@ public static class ConsoleHelper
                         buffer.Remove(cursor, 1);
                         RedrawLine(startLeft, Console.CursorTop, buffer, cursor);
                     }
+
                     break;
 
                 default:
@@ -134,11 +170,18 @@ public static class ConsoleHelper
                         cursor++;
                         RedrawLine(startLeft, Console.CursorTop, buffer, cursor);
                     }
+
                     break;
             }
         }
 
         return string.Empty;
+    }
+
+    private static void ClearLine(int startLeft, int startTop) {
+        Console.SetCursorPosition(startLeft, startTop);
+        Console.Write(new string(' ', Console.BufferWidth - startLeft));
+        Console.SetCursorPosition(startLeft, startTop);
     }
 
     private static void RedrawLine(int startLeft, int startTop, StringBuilder buffer, int cursor)

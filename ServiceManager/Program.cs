@@ -13,6 +13,8 @@ class Program
 {
     public static IConfigurationRoot Configuration = null!;
     public static Logger? Logger;
+
+    private static readonly List<string> CommandsHistory = [];
     private static readonly BlockingCollection<string> Queue = new();
     private static readonly List<CommandBase> Commands = [];
     private static readonly Dictionary<string, SshTunnel?> SshTunnels = new(StringComparer.InvariantCultureIgnoreCase);
@@ -145,9 +147,17 @@ class Program
         new Thread(() =>
         {
             while (!cts.Token.IsCancellationRequested) {
-                var line = ConsoleHelper.ReadLine(cts.Token, 2);
+                var line = ConsoleHelper.ReadLine(cts.Token, 2, CommandsHistory);
                 if (!string.IsNullOrEmpty(line)) {
+                    line = line.Trim();
                     Queue.Add(line);
+                    var hIdx = GetCommandHistoryIndex(line);
+                    if (hIdx < 0) {
+                        CommandsHistory.Add(line);
+                    } else {
+                        CommandsHistory.RemoveAt(hIdx);
+                        CommandsHistory.Add(line);
+                    }
                 } else {
                     PrintPrompt();
                 }
@@ -165,11 +175,12 @@ class Program
 
             try {
                 await Task.Delay(100, cts.Token);
-                if (Queue.TryTake(out var input)) {
+                if (Queue.TryTake(out var oInput)) {
                     ConsoleHelper.InputDisabled = true;
                     userInput = true;
                     Console.WriteLine();
-                    input = input.ToLower().Trim();
+                    oInput = oInput.Trim();
+                    var input = oInput.Trim();
 
                     var idx = input.IndexOf(' ');
                     var commandName = idx >= 0 ? input[..idx] : input;
@@ -218,5 +229,17 @@ class Program
     private static CommandBase? GetCommand(string name)
     {
         return Commands.FirstOrDefault(c => c.Names.Contains(name));
+    }
+
+    private static int GetCommandHistoryIndex(string command)
+    {
+        var idx = 0;
+        foreach (var ch in CommandsHistory) {
+            if (string.Compare(ch, command, StringComparison.InvariantCultureIgnoreCase) == 0)
+                return idx;
+            idx++;
+        }
+
+        return -1;
     }
 }
