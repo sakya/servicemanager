@@ -74,6 +74,14 @@ class Program
             return -1;
         }
 
+        HashSet<string> serviceNames = [];
+        foreach (var service in services) {
+            if (!serviceNames.Add(service.Name)) {
+                Logger.Error("Duplicate service '{ServiceName}' in appsettings.json", service.Name);
+                return -1;
+            }
+        }
+
         // Start SSH tunnels
         var sshTunnelsConfigs = Configuration.GetRequiredSection("sshTunnels").Get<SshTunnelConfig[]>();
         if (sshTunnelsConfigs != null) {
