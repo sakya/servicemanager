@@ -127,7 +127,7 @@ class Program
         ConsoleHelper.WriteLineHighlight($"{"Service", -40}Auto start");
         var i = 0;
         foreach (var service in services) {
-            Console.Write($"[{++i}] {service.Name}");
+            Console.Write($"[{++i,2}] {service.Name}");
             Console.CursorLeft = 40;
             if (service.AutoStart) {
                 ConsoleHelper.WriteLineSuccess("True");

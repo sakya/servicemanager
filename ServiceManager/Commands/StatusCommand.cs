@@ -23,7 +23,7 @@ public class StatusCommand : CommandBase
         if (_sshTunnels.Count > 0) {
             ConsoleHelper.WriteLineHighlight("SSH tunnels status:");
             foreach (var kvp in _sshTunnels) {
-                Console.Write($"[{++i}] {kvp.Key}");
+                Console.Write($"[{++i,2}] {kvp.Key}");
                 Console.CursorLeft = 40;
                 if (kvp.Value?.Status == SshTunnel.SshStatus.Connected) {
                     ConsoleHelper.WriteLineSuccess("Connected");
@@ -37,7 +37,7 @@ public class StatusCommand : CommandBase
         ConsoleHelper.WriteLineHighlight("Service status:");
         i = 0;
         foreach (var service in ServiceHelper.Services) {
-            Console.Write($"[{++i}] {service.Name}");
+            Console.Write($"[{++i,2}] {service.Name}");
             Console.CursorLeft = 40;
             if (ServiceHelper.IsRunning(service)) {
                 ConsoleHelper.WriteSuccess("Running");
